@@ -1,0 +1,38 @@
+# Generated from native Blender constraints; edit the .blend, not this file.
+# Units: metres / degrees. Standard glTF Y-up. All defaults = 0.
+models:
+  Altaz_C.glb:
+    rotation_order: XYZ
+    controls:
+      azimuth:
+        target_node: "DOF_Azimuth"
+        transform: "rotation"
+        space: "local"
+        axis: "y"
+        min: -300.0
+        max: 300.0
+        step: 1.0
+      dome_azimuth:
+        target_node: "DOF_Dome_Azimuth"
+        transform: "rotation"
+        space: "local"
+        axis: "y"
+        min: -300.0
+        max: 300.0
+        step: 1.0
+      elevation:
+        target_node: "DOF_Elevation"
+        transform: "rotation"
+        space: "local"
+        axis: "x"
+        min: 0.0
+        max: 90.0
+        step: 1.0
+      shutter_open:
+        target_node: "DOF_Shutter"
+        transform: "position"
+        space: "local"
+        axis: "x"
+        min: 0.0
+        max: 3.6
+        step: 0.05

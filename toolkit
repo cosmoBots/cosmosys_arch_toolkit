@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Workspace entry point. No installation or activation required.
+set -euo pipefail
+toolkit_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# Literal KEY=value only: never source user configuration or evaluate commands.
+if [[ -f "$toolkit_dir/.env" ]]; then
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line=${line%$'\r'}
+    [[ "$line" =~ ^[[:space:]]*(#.*)?$ ]] && continue
+    if [[ ! "$line" =~ ^(PYTHON_BIN|BLENDER_BIN|TOOLKIT_MODELOS_DIR|TOOLKIT_OUTPUT_DIR)=(.*)$ ]]; then
+      echo 'Configuración .env inválida. Usa sólo las claves y el formato de .env.example.' >&2
+      exit 1
+    fi
+    key=${BASH_REMATCH[1]}
+    value=${BASH_REMATCH[2]}
+    if [[ "$value" == \"*\" || "$value" == \'*\' ]]; then
+      value=${value:1:${#value}-2}
+    fi
+    if [[ -n "$value" && ! -v "$key" ]]; then
+      export "$key=$value"
+    fi
+  done < "$toolkit_dir/.env"
+fi
+python_bin=${PYTHON_BIN:-python3}
+if ! command -v "$python_bin" >/dev/null 2>&1; then
+  echo 'Falta Python 3.10 o posterior. Instálalo con el gestor de tu sistema o desde python.org.' >&2
+  echo 'Si ya lo tienes: PYTHON_BIN=/ruta/a/python3 ./toolkit doctor' >&2
+  exit 1
+fi
+exec "$python_bin" "$toolkit_dir/tools/cli.py" "$@"
