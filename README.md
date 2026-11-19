@@ -176,6 +176,12 @@ Para limitarse a una raíz, usar `--root`; para otra escena, usar `--scene`.
 Los modelos deben
 cumplir [el subconjunto de autoría admitido](docs/blender-to-glb-yaml.md).
 
+## Filtrado de entrada
+
+`import` detecta `0_import/filters.csv` (texto/regex; exclude/atomic/include).
+`--preflight` informa sin sustituir el Blender. Véase la [guía de filtros](docs/import-filters.md)
+para reglas, excepciones y preferencias atómicas exportadas al GLB.
+
 ## Comprobaciones
 
 Desde esta carpeta:

@@ -173,6 +173,14 @@ def run_model(args):
         annotation = dict(controls=controls, model_key=model_key,
                           update_existing=getattr(args, 'update_existing', False),
                           constraints=getattr(args, 'constraints', False), presentation=presentation)
+    filters_path = None
+    filters = []
+    if args.action == 'import':
+        from import_filters import read_filters
+        candidate = Path(args.filters).expanduser().resolve() if args.filters else source.parent / 'filters.csv'
+        if args.filters or candidate.exists():
+            filters = read_filters(candidate)
+            filters_path = candidate
     destination = allocate_run(source, args.output_dir, args.action)
     # Work privately until validation completes, including when annotating the input
     # Blender in place. A failed run must not replace the user's working model.
@@ -184,6 +192,9 @@ def run_model(args):
               'blender': {'path': executable, 'version': version}, 'errors': [], 'warnings': [],
               'scene': args.scene, 'root': args.root, 'output_name': name,
               'exporter_sha256': sha256(ROOT / 'tools/blender/export_model.py')}
+    if filters_path:
+        report['input_filters'] = str(filters_path)
+        report['input_filters_sha256'] = sha256(filters_path)
     if annotation:
         report['input_yaml'] = str(yaml_path)
         report['input_yaml_sha256'] = sha256(yaml_path)
@@ -196,8 +207,11 @@ def run_model(args):
     job.update(annotation or {})
     if args.action == 'import':
         job['scale'] = args.scale
+        job['filters'] = filters
+        job['preflight'] = args.preflight
     write_report(request, job)
-    print(f'Destino: {destination} (se sustituyen los resultados anteriores)', flush=True)
+    scope = 'sólo informe y log; no se guarda Blender' if args.action == 'import' and args.preflight else 'se sustituyen los resultados anteriores'
+    print(f'Destino: {destination} ({scope})', flush=True)
     try:
         status = bounded(blender_command(executable, request), timeout=args.timeout, log=run / 'conversion.log')
         if response.exists():
@@ -206,13 +220,15 @@ def run_model(args):
             report['errors'].append(f'Blender terminó con código {status}. Consulta {args.action}-conversion.log.')
         if sha256(source) != report['source_sha256']:
             report['errors'].append('La fuente cambió durante la ejecución; repite el proceso.')
+        if filters_path and sha256(filters_path) != report['input_filters_sha256']:
+            report['errors'].append('El CSV cambió durante la ejecución; repite el proceso.')
         if annotation and sha256(yaml_path) != report['input_yaml_sha256']:
             report['errors'].append('El YAML cambió durante la ejecución; repite el proceso.')
         if not report['errors'] and args.action == 'export':
             report['verification'] = verify_pair(run / f'{name}.glb', run / f'{name}.yaml')
         if not report['errors'] and args.action == 'annotate':
             report['annotated_blend_sha256'] = sha256(run / f'{name}.blend')
-        if not report['errors'] and args.action == 'import':
+        if not report['errors'] and args.action == 'import' and not args.preflight:
             report['imported_blend_sha256'] = sha256(run / f'{name}.blend')
     except subprocess.TimeoutExpired:
         report['errors'].append(f'Tiempo máximo de {args.timeout}s agotado; proceso detenido.')
@@ -228,7 +244,7 @@ def run_model(args):
     report_name = 'informe.json' if args.action == 'export' else f'{args.action}-informe.json'
     if report['status'] == 'ok':
         suffixes = { 'export': ('.glb', '.yaml'), 'import': ('.blend',), 'annotate': ('.blend',), 'check': () }
-        for suffix in suffixes[args.action]:
+        for suffix in (() if args.action == 'import' and args.preflight else suffixes[args.action]):
             (run / (name + suffix)).replace(destination / (name + suffix))
     for filename, target in (('informe.json', report_name), ('conversion.log', f'{args.action}-conversion.log')):
         if (run / filename).exists():
@@ -278,6 +294,8 @@ def main(argv=None):
             command.add_argument('--controls', required=True, help='YAML existente de controles glTF.')
             command.add_argument('--model-key', help='Clave dentro de models (obligatoria si hay varias).')
         if action == 'import':
+            command.add_argument('--filters', help='CSV search,pattern,action; por defecto filters.csv junto a la entrada.')
+            command.add_argument('--preflight', action='store_true', help='Informar del filtrado sin guardar ni sustituir el Blender.')
             command.add_argument('--scale', type=float, default=1, help='Factor de escala de importación (positivo, defecto 1).')
     verify = commands.add_parser('verify', help='Comprobar una carpeta de exportación del toolkit.')
     verify.add_argument('directory')

@@ -335,7 +335,7 @@ Consultar [el flujo completo](../README.md#partir-de-un-modelo-de-intercambio-y-
 Los formatos sin unidades garantizadas deben revisarse e importarse con el
 factor `--scale` apropiado. No se admite STEP ni se reconstruye historia CAD.
 
-## 10. Preparar subconjuntos y futuras preferencias de importación
+## 10. Preparar subconjuntos y preferencias de importación
 
 Para que un subconjunto sea reconocible, darle una raíz clara en el árbol de
 objetos: puede ser una pieza que ya actúe como raíz o un Empty con un nombre
@@ -348,13 +348,8 @@ por sí sola a un nodo padre del GLB.
 arriba, se editan en Object Properties → Custom Properties y se exportan junto
 con las constraints admitidas. No hacen atómico un conjunto.
 
-**Pendiente:** la preferencia de importación atómica. Cuando se implemente,
-la guía mostrará cómo seleccionar esa raíz en el Outliner, marcar su política
-en las propiedades y verificar en el preflight de Architecture que se propone
-un único ítem conservando toda la geometría descendiente. Hasta entonces no hay
-una propiedad `atomic` soportada por el toolkit/importador; no basta con crear
-manualmente una propiedad con ese nombre.
-
-La futura guía incluirá un ejemplo sin controles y otro con grados de libertad
-internos: no se esconderán controles simplemente por declarar atómico un
-subárbol. Véase [el alcance pendiente](roadmap.md#exportación-ligera-y-preferencias-de-importación).
+La preferencia atómica se puede establecer mediante el CSV de entrada o la
+propiedad versionada `cosmosys_import` de la raíz del conjunto. Véase la
+[guía de filtros y autoría atómica](import-filters.md): incluye revisión sin
+sobrescribir Blender, consola de propiedades y restricciones de controles
+internos en Architecture.

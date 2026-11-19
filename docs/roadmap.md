@@ -16,31 +16,11 @@ autorización para modificar plugins o despliegues.
 
 ### Exportación ligera y preferencias de importación
 
-Ideas acordadas el 2026-11-12, pendientes: no forman parte de los comandos
-actuales ni cambian la importación en Redmine.
-
-- Filtrar la exportación desde Blender por fragmentos de nombre/ruta o por
-  expresiones regulares, siguiendo la experiencia del preflight Architecture.
-  Exportar un GLB realmente ligero, sin la geometría excluida, no sólo ocultarla.
-  Previsualizar selección y resolver qué ocurre con pivotes, descendientes y
-  controles que quedarían sin objetivo; no dejar referencias colgantes.
-- Anotar preferencias por nodo, como `atomic`, para que Architecture proponga
-  una única entrada para el conjunto sin crear ítems por cada descendiente.
-  Eso no elimina geometría del GLB ni equivale al filtrado de exportación.
-  Las preferencias serán propuestas revisables en el preflight: no permiso
-  para crear ítems automáticamente ni para saltar controles/validaciones.
-- Entregar junto con esa función una guía de autoría desde Blender, no sólo
-  scripts: identificar la raíz de un subconjunto en el Outliner, prepararla
-  como objeto/Empty con sus piezas hijas conservando transformaciones, marcar
-  la preferencia de importación en sus propiedades y comprobarla al exportar
-  y revisar en Architecture. Una Collection no sustituye al nodo de jerarquía
-  glTF. Explicar incluir/excluir/atómico y distinguirlo de ocultar o eliminar
-  geometría; ensayar también el caso de controles dentro de un conjunto atómico.
-  El nombre/tipo de la propiedad y su panel se definirán al cerrar el contrato:
-  no documentar ahora una propiedad inventada como si ya funcionase.
-- Versionar estos metadatos antes de incorporarlos al contrato. Reutilizar los
-  conceptos de include/exclude/atomic del importador sin acoplar el toolkit al
-  runtime del plugin ni prometer que ambas implementaciones comparten código.
+Disponible el filtrado al importar a Blender mediante CSV: exclusión física de
+subárboles y preferencias atómicas versionadas, con preflight y excepciones.
+Véase [la guía](import-filters.md). Pendiente aplicar filtros directamente al
+exportar un Blender ya editado, ampliar selección por ruta y añadir un panel
+específico de autoría; hoy la propiedad puede editarse desde la consola.
 
 ### Colisiones y movimiento: ideas para el ecosistema Architecture–PORIS
 
