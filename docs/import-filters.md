@@ -2,7 +2,8 @@
 
 Coloca `filters.csv` junto al fichero de `0_import`: `toolkit import` lo lee
 automáticamente. `--filters ruta.csv` permite elegir otro. Perfiles editables:
-[BancoIFU](../examples/filters/BancoIFU.csv), [NRT](../examples/filters/NRT.csv).
+[example1.csv](../examples/filters/example1.csv) y
+[example2.csv](../examples/filters/example2.csv).
 
 ```csv
 search,pattern,action

@@ -9,7 +9,7 @@ from import_filters import classify, read_filters
 
 class ImportFiltersTest(unittest.TestCase):
     def test_profiles_and_exceptions(self):
-        rules = read_filters(Path(__file__).resolve().parents[1] / 'examples/filters/BancoIFU.csv')
+        rules = read_filters(Path(__file__).resolve().parents[1] / 'examples/filters/example1.csv')
         names = ['DIN912-M03X12', 'TORNILLO_DIN-912_M3X12', 'ISO2338_3',
                  'M6X14', 'FOLDING-MIRROR', 'DIN_TRACK_35', '44V-M70-110_BASE_PLATE_MAIN',
                  'POSICIONADOR_M04X10', 'POSICIONADOR_M03X05.001', 'ST_M12X10_C', 'SCREW_HOLDER']
