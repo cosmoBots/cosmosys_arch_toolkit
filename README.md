@@ -1,7 +1,7 @@
 # cosmoSys Architecture Toolkit
 
 Companion de autoría CAD: documentación, modelos de ejemplo y herramientas
-locales para preparar modelos Blender y exportarlos como GLB + YAML.
+locales para preparar modelos en Blender o FreeCAD y exportarlos como GLB + YAML.
 
 **Experimental.** Repositorio independiente, integrado en `csys` como submódulo.
 No es un plugin Redmine ni un servicio desplegable. No se instala en Redmine,
@@ -49,7 +49,53 @@ El comando opcional `annotate` necesita PyYAML en el Python del toolkit
 (en Debian/Ubuntu, paquete `python3-yaml`). Si falta, indica cómo localizarlo;
 no se instala nada automáticamente ni se necesita PyYAML dentro de Blender.
 
-## Partir de un modelo de intercambio y un YAML
+## Ruta alternativa con FreeCAD
+
+Requiere FreeCAD 1.1 o posterior. `FREECAD_BIN` admite `FreeCADCmd`, un
+AppImage oficial o el ejecutable `AppRun` de un AppImage extraído.
+`--freecad /ruta/al/ejecutable` tiene prioridad sobre esa variable.
+Al crear un `.FCStd`, `import` usa una instancia gráfica aislada de FreeCAD
+para guardar la visibilidad y encuadrar el modelo. Requiere una sesión gráfica.
+`import --preflight` y la comprobación y exportación de un `.FCStd` usan la consola.
+
+```sh
+./toolkit doctor --backend freecad
+./toolkit init modelo
+# Depositar modelo.step y, si lo tienes, modelo.yaml en 0_import/.
+./toolkit import modelos/modelo/0_import/modelo.step
+# Abrir y editar modelos/modelo/1_FreeCAD/modelo.FCStd en FreeCAD.
+./toolkit annotate modelos/modelo/1_FreeCAD/modelo.FCStd \
+  --controls modelos/modelo/0_import/modelo.yaml
+./toolkit check modelos/modelo/1_FreeCAD/modelo.FCStd
+./toolkit export modelos/modelo/1_FreeCAD/modelo.FCStd
+./toolkit verify modelos/modelo/2_export
+```
+
+- Para partir de un documento nativo, usa `./toolkit init modelo --from /ruta/modelo.FCStd`.
+  Para partir de un GLB/glTF estático, usa `./toolkit import entrada.glb --backend freecad`.
+  El importador crea mallas FreeCAD a partir de los triángulos de una sola
+  escena. Aplica las escalas TRS positivas a la geometría y a las posiciones
+  de los hijos. Las matrices explícitas deben ser rígidas. Si FreeCAD cambia
+  el recuento de triángulos, el informe de importación lo indica.
+- `annotate` es opcional y usa PyYAML. Guarda un `modelo.controls.json` al
+  lado del `.FCStd`. `check` y `export` lo leen automáticamente. Usa
+  `--update-existing` para regenerarlo desde el YAML. El `.FCStd` se conserva
+  byte a byte durante la anotación. Usa esta etapa también para recuperar
+  los controles de un GLB a partir de su YAML.
+- Usa etiquetas únicas que coincidan con `target_node` y guarda el documento
+  en su pose de reposo. Un `App::Part` puede servir de pivote. Para un control
+  global, los ancestros deben estar fijos y alineados con el mundo. Los ejes
+  de control se expresan en glTF Y-up y los límites en metros o grados.
+- Se exportan las superficies CAD y mallas visibles con los grupos que las contienen.
+  `--deflection` fija la tolerancia de triangulación en milímetros
+  (0,1 mm por defecto). `--root` selecciona una raíz por etiqueta o nombre
+  interno. El GLB conserva la jerarquía y los pivotes con un aspecto neutro.
+- Esta ruta admite piezas nativas y grupos. Los enlaces `App::Link`, los
+  materiales/texturas de entrada, el filtrado CSV y los controles interactivos
+  dentro de FreeCAD quedan fuera de esta implementación.
+  Usa `--output-dir` para conservar en paralelo las exportaciones de ambos motores.
+
+## Partir de un modelo de intercambio y un YAML en Blender
 
 ```sh
 ./toolkit init modelo
@@ -62,9 +108,8 @@ no se instala nada automáticamente ni se necesita PyYAML dentro de Blender.
 ```
 
 `import` admite GLB/glTF, OBJ, STL, PLY y FBX si su importador está disponible
-en Blender. Para STEP, convertir primero a GLB con CAD Assistant y supervisar
-la conversión; depositar el GLB revisado en `0_import`. No se integra ningún
-conversor STEP en el toolkit. OBJ/STL/PLY no
+en Blender. Para usar un STEP en Blender, conviértelo primero a GLB y revisa
+la conversión. El flujo directo de STEP usa FreeCAD. OBJ/STL/PLY no
 garantizan unidades: verificar dimensiones e indicar `--scale` cuando proceda.
 La importación conserva la geometría y los datos que entienda Blender, no una
 historia paramétrica CAD ni todos los atributos de cualquier formato.
@@ -128,12 +173,12 @@ extras: en este flujo se crean explícitamente con `annotate` y el YAML.
 ## Configuración local
 
 [.env.example](.env.example) es la plantilla versionada; `.env` está ignorado.
-Admite `PYTHON_BIN`, `BLENDER_BIN`, `TOOLKIT_MODELOS_DIR` y `TOOLKIT_OUTPUT_DIR`.
+Admite `PYTHON_BIN`, `BLENDER_BIN`, `FREECAD_BIN`, `TOOLKIT_MODELOS_DIR` y `TOOLKIT_OUTPUT_DIR`.
 Sólo se leen valores literales `CLAVE=valor`: no ejecuta shell ni expande `$VAR`
 o comandos. Se admiten comillas envolventes; usar rutas absolutas de ejecutables.
 Las carpetas relativas se resuelven desde el toolkit, no desde el directorio actual.
 
-Prioridad: opciones (`--blender`, `--output-dir`) > entorno del proceso > `.env`
+Prioridad: opciones (`--blender`, `--freecad`, `--output-dir`) > entorno del proceso > `.env`
 > valores por defecto. Python usa `python3` si no se configura; Blender se busca
 en PATH y después en `~/soft/blender*/blender`. `doctor` muestra las rutas efectivas.
 Si se cambia la carpeta de modelos, las rutas de entrada de los comandos también
@@ -146,10 +191,12 @@ directorio desde el que se invoca el comando.
 - `toolkit`: entrada común (`--help` y `<comando> --help`): doctor, init,
   import, annotate, check, export y verify.
 - `tools/blender/`: preflight y exportador genéricos, sin nombres de la demo.
+- `tools/freecad/`: importación CAD y exportación genérica GLB/YAML.
 - `tools/examples/altaz_c/`: generador y regresiones específicos del ejemplo.
 - `examples/Altaz_C/`: fuente `.blend`, GLB/YAML de referencia e imágenes/documentación.
 - `modelos/<proyecto>/0_import/`: formatos de entrada y YAML previo, si existen.
 - `modelos/<proyecto>/1_blender/`: `.blend` de trabajo y controles anotados.
+- `modelos/<proyecto>/1_FreeCAD/`: `.FCStd` de trabajo y anotaciones de control.
 - `modelos/<proyecto>/2_export/`: GLB enriquecido, YAML generado e informes.
 - `tests/`: pruebas del entorno y del contrato de exportación.
 
@@ -158,15 +205,16 @@ ese marcador, queda fuera del Git del toolkit mediante el `.gitignore` de su ra�
 del toolkit. No hay `.gitignore` dentro: puedes ejecutar `git init` en `modelos/`
 para versionar allí tus entradas, Blender y exportaciones de forma independiente.
 Cada ejecución sustituye los mismos resultados, sin carpetas de timestamps ni
-histórico. `import` y `annotate` escriben en `1_blender`; `export` y `check`, en
-`2_export`. La anotación puede sustituir el propio `.blend` de trabajo después
+histórico. `import` y `annotate` escriben en la etapa de autoría; `export` y
+`check`, en `2_export`. La anotación puede sustituir el propio `.blend` de trabajo después
 de validarlo; para controles ya anotados, indicar `--update-existing`. `0_import`
 no se modifica. Una operación fallida conserva los modelos anteriores, pero
 actualiza su informe/log: no confundir esos modelos con resultados nuevos.
 `check` genera sólo `check-informe.json` y su log. Export guarda `informe.json`
 y `export-conversion.log`; import/annotate usan su propio prefijo.
 Si se configura `TOOLKIT_OUTPUT_DIR`, usa `<ruta>/<proyecto>/<etapa>`;
-`--output-dir` selecciona directamente la carpeta destino.
+`--output-dir` selecciona directamente la carpeta destino. La anotación
+FreeCAD siempre se guarda al lado del `.FCStd`.
 Las copias/versionado son responsabilidad del usuario. Las rutas externas configuradas
 no quedan protegidas por este `.gitignore`: elegir una carpeta privada adecuada.
 
@@ -188,6 +236,8 @@ Desde esta carpeta:
 
 ```sh
 python3 -m unittest discover -s tests -v
+# Con FreeCAD se habilita también la prueba de importación, anotación y exportación.
+# FREECAD_BIN=/ruta/FreeCADCmd python3 -m unittest discover -s tests -v
 blender --background --factory-startup --disable-autoexec -noaudio --python-exit-code 1 --python tests/blender_contract.py
 blender --background --factory-startup --disable-autoexec -noaudio --python-exit-code 1 --python tests/blender_annotation.py
 blender --background --factory-startup --disable-autoexec -noaudio --python-exit-code 1 --python tests/blender_drivers.py
@@ -202,7 +252,7 @@ en PATH. Las pruebas usan temporales, no modifican los modelos del usuario.
 
 ## Uso independiente
 
-Los scripts se ejecutan con el Blender del usuario y sólo deben utilizarse con
+Los scripts se ejecutan con el Blender o FreeCAD del usuario y sólo deben utilizarse con
 modelos de confianza. No son un sandbox para abrir archivos ajenos. No hay API
 HTTP, Dockerfile, arranque de contenedores ni procesamiento de subidas.
 

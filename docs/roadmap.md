@@ -11,6 +11,7 @@ autorización para modificar plugins o despliegues.
 - Configuración `.env` ignorada y cajones privados `modelos/`, sin instalador.
 - Exportación local de ficheros de confianza, sin conexión con Architecture.
 - El ejemplo conserva controles tanto en YAML como en extras del GLB.
+- La ruta `1_FreeCAD` usa el mismo contrato GLB/YAML desde STEP, GLB/glTF estático o FCStd.
 
 ## Siguientes etapas
 

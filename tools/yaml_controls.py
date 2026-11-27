@@ -37,6 +37,11 @@ def read_controls(path, model_key=None, *, include_model=False):
     if model_key not in models:
         raise ValueError('Indica --model-key. Modelos del YAML: ' + ', '.join(models))
     model = models[model_key]
+    controls, pose = validate_model(model)
+    return (path, model_key, controls, pose) if include_model else (path, model_key, controls)
+
+
+def validate_model(model):
     if not isinstance(model, dict) or set(model) - {'rotation_order', 'controls', 'rotation_degrees', 'translation'} or model.get('rotation_order', 'XYZ') != 'XYZ':
         raise ValueError('Sólo se admite rotation_order XYZ, controls, rotation_degrees y translation.')
     pose = {}
@@ -53,7 +58,7 @@ def read_controls(path, model_key=None, *, include_model=False):
     targets = set()
     fields = {'target_node', 'transform', 'space', 'axis', 'min', 'max', 'step'}
     for key, control in controls.items():
-        if not key.strip() or not isinstance(control, dict) or not fields <= set(control) or set(control) - fields - {'round_decimals'}:
+        if not isinstance(key, str) or not key.strip() or not isinstance(control, dict) or not fields <= set(control) or set(control) - fields - {'round_decimals'}:
             raise ValueError(f'{key}: campos de control incompletos o no soportados.')
         if 'round_decimals' in control and (type(control['round_decimals']) is not int or not 0 <= control['round_decimals'] <= 15):
             raise ValueError(f'{key}: round_decimals debe ser un entero entre 0 y 15.')
@@ -69,4 +74,4 @@ def read_controls(path, model_key=None, *, include_model=False):
         low, high, step = values
         if not low <= 0 <= high or low >= high or step <= 0:
             raise ValueError(f'{key}: rango debe incluir cero y paso debe ser positivo.')
-    return (path, model_key, controls, pose) if include_model else (path, model_key, controls)
+    return controls, pose
